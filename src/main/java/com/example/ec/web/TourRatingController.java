@@ -6,6 +6,9 @@ import com.example.ec.domain.TourRatingPk;
 import com.example.ec.repository.TourRatingRepository;
 import com.example.ec.repository.TourRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -35,7 +38,7 @@ public class TourRatingController {
     protected TourRatingController() {
 
     }
-    
+
     /**
      * Create a Tour Rating.
      *
@@ -51,16 +54,22 @@ public class TourRatingController {
     }
 
     /**
-     * Lookup a the Ratings for a tour.
+     * Lookup a page of Ratings for a tour.
      *
      * @param tourId Tour Identifier
-     * @return All Tour Ratings as RatingDto's
+     * @param pageable paging details
+     * @return Requested page of Tour Ratings as RatingDto's
      */
     @GetMapping
-    public List<RatingDto> getAllRatingsForTour(@PathVariable(value = "tourId") int tourId) {
+    public Page<RatingDto> getRatings(@PathVariable(value = "tourId") int tourId,
+                                      Pageable pageable){
         verifyTour(tourId);
-        return tourRatingRepository.findByPkTourId(tourId).stream()
-                .map(RatingDto::new).collect(Collectors.toList());
+        Page<TourRating> ratings = tourRatingRepository.findByPkTourId(tourId, pageable);
+        return new PageImpl<>(
+                ratings.get().map(RatingDto::new).collect(Collectors.toList()),
+                pageable,
+                ratings.getTotalElements()
+        );
     }
 
     /**
